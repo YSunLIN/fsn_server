@@ -9,23 +9,17 @@
 文件放置于 /etc/scut_8021x.conf
 
 #####格式如下:
-account（用户名）
-
-password （密码）
-
-interface （连接外网的网络接口名称，详情在linux下执行ifconfig）
-
-server_ip:port  （局域网的IP，还有端口一般填7288，不要有空格）
+account（用户名）<br/>
+password （密码）<br/>
+interface （连接外网的网络接口名称，详情在linux下执行ifconfig）<br/>
+server_ip:port  （局域网的IP，还有端口一般填7288，不要有空格）<br/>
 
 
 #####内容样例:
-2020300030000
-
-2020300030000
-
-eth0
-
-192.168.1.1:7288
+2020300030000<br/>
+2020300030000<br/>
+eth0<br/>
+192.168.1.1:7288<br/>
 
 
 

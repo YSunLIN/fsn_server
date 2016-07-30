@@ -207,7 +207,7 @@ void *http_server(void *args)
                 strcat(tempContent, dstatusMsg);
                 strcat(tempContent, "<br/>");
             }
-            else if(xstatus == XONLINE)
+            else if(dstatus == DONLINE)
                 strcat(tempContent, "drcom status: online<br/>");
             else{
                 strcat(tempContent, "drcom status: error<br/>");

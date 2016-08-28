@@ -19,7 +19,7 @@ void print_mac(char *src)
 
 char* mac_ntoa(char src[ETH_ALEN])
 {
-    char mac_str[32] = ""; 
+    static char mac_str[32] = ""; 
     sprintf(mac_str, "%02x:%02x:%02x:%02x:%02x:%02x",
                         (unsigned char)src[0],
                         (unsigned char)src[1],

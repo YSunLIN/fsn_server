@@ -17,6 +17,21 @@ void print_mac(char *src)
 }
 
 
+char* mac_ntoa(char src[ETH_ALEN])
+{
+    char mac_str[32] = ""; 
+    sprintf(mac_str, "%02x:%02x:%02x:%02x:%02x:%02x",
+                        (unsigned char)src[0],
+                        (unsigned char)src[1],
+                        (unsigned char)src[2],
+                        (unsigned char)src[3],
+                        (unsigned char)src[4],
+                        (unsigned char)src[5]);
+
+    return mac_str;
+}
+
+
 void print_hex(char *hex, int len)
 {
     int i;
@@ -53,10 +68,11 @@ inline uint32_t big2little_32(uint32_t A)
 * ************************************************************************/
 void str_strip(char *str){
     char *ptmp = str;
-    while(*ptmp != '\n' && *ptmp != '\0' && *ptmp != ' '  && *ptmp != '\t')
+    while(*ptmp != '\n' && *ptmp != '\r' && *ptmp != '\0' && *ptmp != ' '  && *ptmp != '\t')
         ptmp++;
     *ptmp = '\0';
 }
+
 
 void get_from_file(char *filename)
 {
@@ -112,4 +128,16 @@ void get_from_file(char *filename)
 
     fclose(fp);
     // printf("%s %s %s\n", user_id, passwd, interface_name);
+}
+
+
+// 非线程安全
+void get_ctime(char* buf, int len){
+    time_t time_raw_format;  
+    struct tm * time_struct;
+
+    time ( &time_raw_format );  
+    // localtime : time_t -> tm 此函数返回的时间日期经时区转换 
+    time_struct = localtime ( &time_raw_format );
+    strftime (buf, len, "%F %T %Z", time_struct);
 }

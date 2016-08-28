@@ -10,9 +10,11 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <netpacket/packet.h> 
+#include <time.h>
+#include <sys/time.h>
 
 
-#define PASSWDFILE "/etc/scut_8021x.conf"
+#define PASSWDFILE "/etc/fsn.conf"
 
 
 char user_id[32];
@@ -29,6 +31,8 @@ void get_from_file(char *);
 void print_mac(char *src);
 void print_hex(char *hex, int len);
 int checkCPULittleEndian();
+void get_ctime(char* buf, int len);
+char* mac_ntoa(char src[ETH_ALEN]);
 uint32_t big2little_32(uint32_t A);
 
 #endif

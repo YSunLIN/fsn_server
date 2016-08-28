@@ -27,12 +27,14 @@
 #define DR_SERVER_IP "202.38.210.131"
 #define DR_PORT 61440
 #define RECV_BUF_LEN 1500
-#define RETRY_TIME 15
+#define RETRY_TIME 3
 
 
 int drcom_pkt_id;
 int dstatus;
 char dstatusMsg[256];
+char dsystemMsg[256];
+char dUpdateAt[64];
 
 
 void init_env_d();

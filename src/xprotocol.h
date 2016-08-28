@@ -110,8 +110,11 @@ enum LOGFLAG { ON = 1, OFF = 0};
 enum LOGFLAG log_flag ;
 struct sockaddr_ll sa_ll;
 struct ethhdr  eth_header;
+struct ethhdr  broadcast_eth_header;
 int xstatus;
+int x_is_broadcast;
 char nodifyMsg[256];
+char xUpdateAt[64];
 
 
 /* pack format ***********************************/

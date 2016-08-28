@@ -57,8 +57,8 @@ char* parseToOp(uint8_t *recv_buf, int len){
 
 
 uint8_t* httpResponse(char* content){
-	static char buf[4096];
-	const char header[] = "HTTP/1.1 200 OK\r\nServer: fscutnet\r\nContent-Type: text/html;charset=utf-8\r\n\r\n";
+	static char buf[4096 * 2];
+	const char header[] = "HTTP/1.1 200 OK\r\nServer: fscutnet\r\nContent-Type: text/html;charset=utf-8\r\nConnection: close\r\n\r\n";
 	strcpy(buf, header);
 	strcat(buf, content);
 	return (uint8_t*)buf;
@@ -67,7 +67,7 @@ uint8_t* httpResponse(char* content){
 
 uint8_t* httpRedirect(char* url){
     static char buf[4096];
-    const char header[] = "HTTP/1.1 302 Moved Temporarily\r\nServer: fscutnet\r\nLocation:%s\r\n\r\n";
+    const char header[] = "HTTP/1.1 302 Moved Temporarily\r\nServer: fscutnet\r\nLocation:%s\r\nConnection: close\r\n\r\n";
     sprintf(buf, header, url);
     return (uint8_t*)buf;
 }
@@ -105,6 +105,15 @@ void *http_server(void *args)
 		perror("Create listen socket failed");
 		exit(-1);
 	}
+
+    // 绑定之前，设置其端口复用  
+    int opt = 1;  
+    if( 0 != setsockopt(listenfd, SOL_SOCKET,SO_REUSEADDR,   
+        (const void *)&opt, sizeof(opt) ))
+    {
+        perror("listen socket REUSEADDR failed");
+        exit(-1);
+    }
 
 	if( 0 != bind(listenfd, (struct sockaddr *) &servaddr, sizeof(servaddr)))
 	{
@@ -156,8 +165,8 @@ void *http_server(void *args)
             send_buf = httpRedirect("/");
         }
         else{
-        	char* tempContent = (char*)malloc(2048);
-            memset(tempContent, 0, 2048);
+        	char* tempContent = (char*)malloc(7000);
+            memset(tempContent, 0, 7000);
 
             strcat(tempContent, "<h3>Profile</h3>");
             strcat(tempContent, "username: ");
@@ -170,6 +179,10 @@ void *http_server(void *args)
 
             strcat(tempContent, "host ip: ");
             strcat(tempContent, inet_ntoa(my_ip.sin_addr));
+            strcat(tempContent, "<br/>");
+
+            strcat(tempContent, "mac addr: ");
+            strcat(tempContent, mac_ntoa(my_mac));
             strcat(tempContent, "<br/>");
 
             strcat(tempContent, "cpu endian: ");
@@ -191,14 +204,12 @@ void *http_server(void *args)
                 strcat(tempContent, nodifyMsg);
                 strcat(tempContent, "<br/>");
             }
-            else if(xstatus == XONLINE)
+            else if(xstatus == XONLINE){
                 strcat(tempContent, "8021x status: online<br/>");
-            else{
-                strcat(tempContent, "8021x status: error<br/>");
-                strcat(tempContent, "8021x nodify: ");
-                strcat(tempContent, nodifyMsg);
-                strcat(tempContent, "<br/>");
             }
+            strcat(tempContent, "update at: ");
+            strcat(tempContent, xUpdateAt);
+            strcat(tempContent, "<br/>");
 
             strcat(tempContent, "<br/><h3>DrCOM protocol</h3>");
             if(dstatus == DOFFLINE){
@@ -207,14 +218,17 @@ void *http_server(void *args)
                 strcat(tempContent, dstatusMsg);
                 strcat(tempContent, "<br/>");
             }
-            else if(dstatus == DONLINE)
+            else if(dstatus == DONLINE){
                 strcat(tempContent, "drcom status: online<br/>");
-            else{
-                strcat(tempContent, "drcom status: error<br/>");
-                strcat(tempContent, "drcom msg: ");
-                strcat(tempContent, dstatusMsg);
-                strcat(tempContent, "<br/>");
             }
+
+            strcat(tempContent, "drcom message: ");
+            strcat(tempContent, dsystemMsg);
+            strcat(tempContent, "<br/>");
+
+            strcat(tempContent, "update at: ");
+            strcat(tempContent, dUpdateAt);
+            strcat(tempContent, "<br/>");
 
             send_buf = httpResponse(tempContent);
             free(tempContent);

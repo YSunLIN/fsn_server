@@ -2,9 +2,25 @@
 #include "md5.h"
 
 static int sock;
-char EAP_TYPE_ID_SALT[9]  = {0x00, 0x44, 0x61, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff};
-char EAP_TYPE_MD5_SALT[9] = {0x00, 0x44, 0x61, 0x2a, 0x00, 0xff, 0xff, 0xff, 0xff};
-
+static char EAP_TYPE_ID_SALT[9]  = {0x00, 0x44, 0x61, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff};
+static char EAP_TYPE_MD5_SALT[9] = {0x00, 0x44, 0x61, 0x2a, 0x00, 0xff, 0xff, 0xff, 0xff};
+static char EAPOL_8021x_SALT[] = {
+    0xff, 0xff, 0x37, 0x77, 0xff, 0x89, 0xfd, 0xe5, 
+    0xb4, 0x00, 0x00, 0x00, 0xff, 0x89, 0xfd, 0xe5, 
+    0x80, 0xef, 0xef, 0xef, 0xef, 0xa6, 0xef, 0x00, 
+    0x00, 0x13, 0x11, 0x38, 0x30, 0x32, 0x31, 0x78, 
+    0x2e, 0x65, 0x78, 0x65, 0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+    0x00, 0x00, 0x00, 0x02, 0x33, 0x00, 0x00, 0x01, 
+    0x00, 0x00, 0x13, 0x11, 0x00, 0x28, 0x1a, 0x28, 
+    0x00, 0x00, 0x13, 0x11, 0x17, 0x22, 0x93, 0x91, 
+    0x65, 0x65, 0x62, 0x60, 0x66, 0x96, 0x93, 0x68, 
+    0x91, 0x62, 0x91, 0x67, 0x66, 0x61, 0x96, 0x91, 
+    0x64, 0x68, 0x93, 0x62, 0x69, 0x64, 0x61, 0x69, 
+    0xc9, 0xd3, 0x62, 0x65, 0x67, 0x68, 0x00, 0x00, 
+    0x13, 0x11, 0x18, 0x06, 0x00, 0x00, 0x00, 0x00
+};
 
 // create socket and get src ether address
 int crt_sock(struct ifreq * ifr)
@@ -112,6 +128,7 @@ int  create_ethhdr_sock(struct ethhdr * eth_header)
     return mysock;
 }
 
+
 void init_dial_env()
 {
     /* linklayer broadcast address, used to connect the huawei's exchange */
@@ -124,9 +141,7 @@ void init_dial_env()
     sa_ll.sll_protocol = htons(ETH_P_PAE);
     sa_ll.sll_ifindex = if_nametoindex(interface_name);   
     sa_ll.sll_hatype = 0;
-    // 只接受自己的包
-    sa_ll.sll_pkttype = PACKET_HOST;
-    // sa_ll.sll_pkttype = PACKET_HOST | PACKET_BROADCAST  | PACKET_MULTICAST;
+    sa_ll.sll_pkttype = PACKET_HOST | PACKET_BROADCAST  | PACKET_MULTICAST;
     memcpy(sa_ll.sll_addr, dev_dest, ETH_ALEN);
 
     sock = create_ethhdr_sock(&eth_header); // eth_header,sock: global value
@@ -136,6 +151,7 @@ void init_dial_env()
     broadcast_eth_header.h_proto = htons(ETH_P_PAE); // ETH_P_PAE = 0x888e
 }
 
+
 void send_pkt(int mysock, uint8_t * send_buf, size_t size)
 {
     if( -1 == sendto(mysock, send_buf, size, 0, (struct sockaddr *)&sa_ll,  sizeof(sa_ll)))
@@ -144,6 +160,7 @@ void send_pkt(int mysock, uint8_t * send_buf, size_t size)
         exit(-5);
     }   
 }
+
 
 /* used to encpass the passwd */
 int mk_response_md5( authhdr *request_eap, uint8_t *md)
@@ -170,7 +187,7 @@ int mk_response_md5( authhdr *request_eap, uint8_t *md)
 
 }
 
-/* cmd: ctl different pkt */
+
 /* If cmd is "start" or "logoff", recv_buf = NULL, otherwise recv_buf contains respn pkt */
 size_t mk_pkt(uint8_t * send_buf, int cmd, uint8_t * recv_buf, struct ethhdr * eth_header)
 {
@@ -185,29 +202,13 @@ size_t mk_pkt(uint8_t * send_buf, int cmd, uint8_t * recv_buf, struct ethhdr * e
     authhdr *cisco_auth = NULL;
     memset(&auth_pkt, 0, sizeof(authhdr));
     auth_pkt.version  = AUTH_VERSION;
-
-#ifdef DEBUG
-printf("\nhere0\n");
-printf("%x\n", recv_buf);
-printf("\nhere0\n");
-#endif
     
     if( recv_buf ) 
         cisco_auth = (authhdr *)(recv_buf + sizeof(struct ethhdr));
 
-#ifdef DEBUG
-printf("\n");
-printf("here\n");
-printf("%x\n", cisco_auth);
-if( cisco_auth )
-    printf("mk_pkt cisco_auth->ext_data.id: %d\n", cisco_auth->ext_data.id);
-printf("here\n");
-#endif
-
-
     //  copy the eth_header to send_buf 
     memcpy(send_buf, eth_header, sizeof(struct ethhdr));
-        pkt_size = sizeof(struct ethhdr);
+    pkt_size = sizeof(struct ethhdr);
     
 
     // make the auth header and eap header
@@ -250,22 +251,35 @@ printf("here\n");
         case LOGOFF:
             auth_pkt.auth_type = AUTH_TYPE_LOGOFF;
             break;
-            case HEARTBEAT:
-                    memcpy(&auth_pkt.ext_data, &cisco_auth->ext_data,
-                             cisco_auth->auth_len);
-                    auth_pkt.auth_type = cisco_auth->auth_type;
-                    auth_pkt.auth_len = cisco_auth->auth_len;
-                    break;
-             default : break;
+        case HEARTBEAT:
+            memcpy(&auth_pkt.ext_data, &cisco_auth->ext_data,
+                     cisco_auth->auth_len);
+            auth_pkt.auth_type = cisco_auth->auth_type;
+            auth_pkt.auth_len = cisco_auth->auth_len;
+            break;
+        default : 
+            break;
     }
-            
 
     len += (int16_t)&((authhdr*)0)->ext_data;  
     memcpy(send_buf + pkt_size, &auth_pkt, len);
     pkt_size += len;
 
+    // // 增加尾部盐
+    // memcpy(send_buf + pkt_size, EAPOL_8021x_SALT, sizeof(EAPOL_8021x_SALT));
+    // pkt_size += sizeof(EAPOL_8021x_SALT);
+
+    // 保证报文的长度为96
+    if(pkt_size < 96) pkt_size = 96;
+
+# ifdef DEBUG
+    printf("8021x send %d: ", cmd);
+    print_hex(send_buf, pkt_size);
+# endif
+
     return pkt_size;
-} 
+}
+
 
 void logon()
 {
@@ -281,12 +295,11 @@ void logon()
         exit(-1);
     }
 
-    
 #ifdef DEBUG
-printf("\n");
-printf("dest: \t");print_mac(eth_header.h_dest);
-printf("src: \t");print_mac(eth_header.h_source);
-printf("\n");
+    printf("\n");
+    printf("dest: \t");print_mac(eth_header.h_dest);
+    printf("src: \t");print_mac(eth_header.h_source);
+    printf("\n");
 #endif
     /* make the eapol_start pkt, contains mac&eap packet. */
     
@@ -300,6 +313,7 @@ printf("\n");
     free(logon_pkt);
     log_flag = ON;
 }
+
 
 void logoff()
 {
@@ -323,8 +337,9 @@ void logoff()
     send_pkt(sock, logoff_pkt, pkt_size);
     free(logoff_pkt);
     log_flag = OFF; 
-    
+
 }
+
 
 void parse_pkt(uint8_t * recv_buf, struct ethhdr * local_ethhdr, int rspn_sock)
 {
@@ -348,10 +363,13 @@ void parse_pkt(uint8_t * recv_buf, struct ethhdr * local_ethhdr, int rspn_sock)
         exit(-1);
     }
 
+    // 清零
+    memset(rspn_pkt, 0, sizeof(uint8_t) * ETH_FRAME_LEN);
+
 #ifdef DEBUG
-printf("\nrecv_hdr->h_source: \t");print_mac(recv_hdr->h_source);
-printf("eth_ethhdr->h_src: \t");print_mac(eth_header.h_source);
-printf("\n");
+    printf("\nrecv_hdr->h_source: \t");print_mac(recv_hdr->h_source);
+    printf("eth_ethhdr->h_src: \t");print_mac(eth_header.h_source);
+    printf("\n");
 #endif
 
     // check recv  pkt
@@ -360,12 +378,12 @@ printf("\n");
             rspd_auth = (authhdr *) (recv_buf + sizeof(struct ethhdr)); 
 
 # ifdef DEBUG
-printf("\n");
-printf("Had recv pkt, then PARSE_PKT    .................................\n");
-printf("recv_hdr->h_dest: \t");print_mac(recv_hdr->h_dest);
-printf("local_ethhdr->h_dest: \t");print_mac(local_ethhdr->h_dest);
-printf("eap code: \t%d\n", rspd_auth->ext_data.code);
-printf("eap_rspn_type code: \t%d\n", rspd_auth->ext_data.eap_rspn_type);
+            printf("\n");
+            printf("Had recv pkt, then PARSE_PKT    .................................\n");
+            printf("recv_hdr->h_dest: \t");print_mac(recv_hdr->h_dest);
+            printf("local_ethhdr->h_dest: \t");print_mac(local_ethhdr->h_dest);
+            printf("eap code: \t%d\n", rspd_auth->ext_data.code);
+            printf("eap_rspn_type code: \t%d\n", rspd_auth->ext_data.eap_rspn_type);
 # endif
             
             // 非EAP包
@@ -464,7 +482,7 @@ void recv_eap_pkt(const int sock_arg, struct sockaddr_ll * sa_ll_arg, struct eth
             }
         }
 #ifdef DEBUG
-printf("\nHad recv______________\n");
+        printf("\nHad recv______________\n");
 #endif
         if(x_is_broadcast)
             local_ethhdr = &broadcast_eth_header;

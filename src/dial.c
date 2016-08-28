@@ -58,7 +58,7 @@ char* parseToOp(uint8_t *recv_buf, int len){
 
 uint8_t* httpResponse(char* content){
 	static char buf[4096 * 2];
-	const char header[] = "HTTP/1.1 200 OK\r\nServer: fscutnet\r\nContent-Type: text/html;charset=utf-8\r\nConnection: close\r\n\r\n";
+	const char header[] = "HTTP/1.1 200 OK\r\nServer: fscutnet\r\nContent-Type: text/html;charset=gbk\r\nConnection: close\r\n\r\n";
 	strcpy(buf, header);
 	strcat(buf, content);
 	return (uint8_t*)buf;

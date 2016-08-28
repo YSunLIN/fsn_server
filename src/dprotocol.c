@@ -429,7 +429,7 @@ void* serve_forever_d(void *args)
                 dstatus = DONLINE;
                 // 更新时间
                 get_ctime(dUpdateAt, sizeof(dUpdateAt));
-                sleep(13);
+                sleep(10);
                 continue;
             }
             // 这里没有continue
@@ -485,7 +485,7 @@ void* serve_forever_d(void *args)
             dstatus = DONLINE;
             // 更新时间
             get_ctime(dUpdateAt, sizeof(dUpdateAt));
-            sleep(13);
+            sleep(10);
             continue;
         }
     }

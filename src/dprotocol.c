@@ -385,13 +385,16 @@ void* serve_forever_d(void *args)
 
     drcom_pkt_id = 0;
     dstatus = DOFFLINE;
-    strcpy(dstatusMsg, "please log on first");
+    strcpy(dstatusMsg, "none");
     strcpy(dsystemMsg, "none");
     // 更新时间
     get_ctime(dUpdateAt, sizeof(dUpdateAt));
 
     while(1){
         sleep(2);
+        // 没登录就继续等待
+        if(!is_login) continue;
+
         if(old_xstatus != xstatus){
             old_xstatus = xstatus;
             if(xstatus == XONLINE && dstatus == DOFFLINE){

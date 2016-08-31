@@ -145,15 +145,18 @@ typedef struct authen_8021x_header
 } authhdr;
 
 
-void send_pkt(int, uint8_t * , size_t );
 void init_dial_env(void);
 void logon(void);
 void logoff(void);
-int crt_sock(struct ifreq * );
+void* serve_forever_x(void *args);
+
+
+int crt_sock(struct ifreq *);
 int create_ethhdr_sock(struct ethhdr *);
 void recv_eap_pkt(const int, struct sockaddr_ll *, struct ethhdr*);
 int mk_response_md5(authhdr *, uint8_t *);
 size_t mk_pkt(uint8_t * , int , uint8_t *, struct ethhdr * );
 void parse_pkt(uint8_t * , struct ethhdr *, int );
-void* serve_forever_x(void *args);
+void send_pkt(int, uint8_t * , size_t );
+
 #endif

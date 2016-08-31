@@ -73,7 +73,7 @@ void str_strip(char *str){
     *ptmp = '\0';
 }
 
-
+#ifdef  _X86_
 void get_from_file(char *filename)
 {
     
@@ -129,6 +129,31 @@ void get_from_file(char *filename)
     fclose(fp);
     // printf("%s %s %s\n", user_id, passwd, interface_name);
 }
+
+#else
+void runCommand(char buf[], int len, const char *command)
+{
+    FILE *stream;
+    stream = popen(command, "r");
+    if(stream == NULL){
+        fprintf(stderr, "run command error : %s\n", command);
+    }
+    else{
+        fread(buf, sizeof(char), len, stream); 
+    }
+    str_strip(buf);
+}
+
+void get_from_file(char *filename)
+{
+    runCommand(interface_name, 32, "uci get network.wan.ifname");
+    runCommand(listen_ip, 32, "uci get network.lan.ipaddr");
+    listen_port = 7288;
+    // 清空账号密码
+    user_id[0] = 0;
+    passwd[0] = 0;
+}
+#endif
 
 
 // 非线程安全

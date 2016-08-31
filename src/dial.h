@@ -1,10 +1,6 @@
 #ifndef __DIAL_H
 #define __DIAL_H
 
-#include "public.h"
-#include "xprotocol.h"
-#include "dprotocol.h"
-
 #include <stdio.h> 
 #include <stdint.h>
 #include <stdlib.h>
@@ -23,6 +19,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 
+#define HTTP_TIMEOUT 10
 
 void sig_action(int signo);
 void *http_server(void *args);

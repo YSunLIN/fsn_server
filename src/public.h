@@ -22,6 +22,7 @@ char passwd[32];
 char interface_name[32];
 char listen_ip[32];
 int listen_port;
+int is_login;
 
 struct sockaddr_in my_ip;
 char my_mac[ETH_ALEN];

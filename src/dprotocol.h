@@ -12,11 +12,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <net/if.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <string.h>
-#include <arpa/inet.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <fcntl.h>

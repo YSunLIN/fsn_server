@@ -25,6 +25,7 @@
 #define DR_SERVER_IP "202.38.210.131"
 #define DR_PORT 61440
 #define RECV_BUF_LEN 1500
+#define D_TIMEOUT 5
 #define RETRY_TIME 3
 
 

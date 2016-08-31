@@ -331,11 +331,11 @@ void init_env_d()
     }
 
     // 设置超时时间
-    struct timeval ti;   
-    ti.tv_sec = 3;
-    ti.tv_usec = 0;
-    setsockopt(sock,SOL_SOCKET, SO_RCVTIMEO, &ti, sizeof(ti));
-    setsockopt(sock,SOL_SOCKET, SO_SNDTIMEO, &ti, sizeof(ti));
+    struct timeval recv_ti, send_ti;   
+    send_ti.tv_sec = recv_ti.tv_sec = D_TIMEOUT;
+    send_ti.tv_usec = recv_ti.tv_usec = 0;
+    setsockopt(sock,SOL_SOCKET, SO_RCVTIMEO, &recv_ti, sizeof(recv_ti));
+    setsockopt(sock,SOL_SOCKET, SO_SNDTIMEO, &send_ti, sizeof(send_ti));
 }
 
 

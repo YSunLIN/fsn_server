@@ -382,6 +382,7 @@ void* serve_forever_d(void *args)
     int old_xstatus = XOFFLINE;
     int ret;
     int login_fail_count = 0;
+    int xloginWait;
 
     drcom_pkt_id = 0;
     dstatus = DOFFLINE;
@@ -457,8 +458,14 @@ void* serve_forever_d(void *args)
             logoff();
             logon();
             // 防止sleep造成无法捕捉到边缘触发
-            old_xstatus = XOFFLINE;
+            old_xstatus = xstatus = XOFFLINE;
             dstatus = DOFFLINE;
+            xloginWait = 0;
+            // 尝试等久点，由于何健明的bug
+            while(xstatus != XONLINE && xloginWait < 10){
+                sleep(1);
+                xloginWait += 1;
+            }
             // 前面已经sleep过了
             continue;
         }

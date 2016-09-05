@@ -6,7 +6,7 @@
 
 static char index_html[] = "<!DOCTYPE html><html><head><meta http-equiv='refresh' content='%d'><meta charset='gbk'><style> body { width: 900px; margin: auto; font-family: 'Microsoft YaHei', '微软雅黑', Arial, Helvetica; } a{ text-decoration:none; } .code { font-family: 'consolas', monospace; } p { color: #333; margin: 3px 0; } p span { display: inline-block; vertical-align: top; } p .l { width: 30%%; margin-right: 5%%; } p .r { width: 65%%; } .inertia { font-size: 0.8rem; color: #aaa; margin-left: 5px; vertical-align: bottom; } h3 { display: inline-block; width: auto; font-size: 2rem; font-weight: bold; color: #34495e; margin: 20px 0; border-bottom: 5px solid #3498db; } h3 span { padding:0 10px; font-size: 1rem; font-weight: normal; color: #333; } .button { margin-top: 20px; background-color: #3498db; border-radius: 5px; float: right; color: #fff; padding: 10px 20px; cursor: pointer; } .button:hover { background-color: #2c7baf; }</style></head><body><a class='button' href='/logout'>登 出</a><h3>账户<span>Profile</span></h3><p><span class='l'>用户名<span class='inertia'>Username</span></span><span class='code r'>%s</span></p><p><span class='l'>网卡<span class='inertia'>Inet Face</span></span><span class='code r'>%s</span></p><p><span class='l'>端口地址<span class='inertia'>Host Ip</span></span><span class='code r'>%s</span></p><p><span class='l'>物理地址<span class='inertia'>Mac Addr</span></span><span class='code r'>%s</span></p><p><span class='l'>CPU 端模式<span class='inertia'>Cpu Endian</span></span><span class='code r'>%s</span><p/><h3>8021x 协议<span>8021x Protocol</span></h3><p><span class='l'>8021x 状态<span class='inertia'>8021x Status</span></span><span class='code r'>%s</span></p><p><span class='l'>8021x 通知<span class='inertia'>8021x Nodify</span></span><span class='r'>%s</span></p><p><span class='l'>最近更新<span class='inertia'>Update At</span></span><span class='code r'>%s</span></p><h3>DrCom 协议<span>DrCom Protocol</span></h3><p><span class='l'>DrCom 状态<span class='inertia'>DrCom Status</span></span><span class='code r'>%s</span></p><p><span class='l'>DrCom 日志<span class='inertia'>DrCom Log</span></span><span class='r'>%s</span></p><p><span class='l'>DrCom 消息<span class='inertia'>DrCom Message</span></span><span class='r'>%s</span></p><p><span class='l'>最近更新<span class='inertia'>Update At</span></span><span class='code r'>%s</span></p></body></html>";
 
-static char login_html[] = "<!DOCTYPE html><html><head><meta charset='gbk'><style> body { font-family: 'Microsoft YaHei', '微软雅黑', Arial, Helvetica; margin: auto; width: 256px; color: #333; } .theme { color: #3498db; } .dark-theme { color: #00025d; } form { margin: 100px 0; } .button { margin-top: 10px; background-color: #3498db; border-radius: 5px; color: #fff; padding: 10px 0; text-align: center; cursor: pointer; } .button:hover { background-color: #2c7baf; } .inputs { padding-top: 20px; background-color: rgba(0,0,0,.05); border-radius: 5px; } input[type='text'], input[type='password'] { box-sizing: border-box; padding: 10px 20px; width: 100%%; border: 0; outline: 0; background-color: transparent; } .title { font-weight: bold; font-size: 2rem; margin: 10px 0; }</style></head><body><form><div class='title'><span class='theme'>F</span><span class='dark-theme'>Scut</span><span class='theme'>Net</span></div><div class='inputs'><input type='text' placeholder='请输入账号...' id='userid'><input type='password' placeholder='请输入密码...' id='passwd' onkeydown='if(event.keyCode==13){login()}'></div><div class='button' onclick='login()'>登 录</div></form><script> function login(){ var userid = document.getElementById('userid').value; var passwd = document.getElementById('passwd').value; window.location = '/login?' + userid + ':' + passwd; }</script></body></html>";
+static char login_html[] = "<!DOCTYPE html><html><head><meta charset='gbk'><style> body { font-family: 'Microsoft YaHei', '微软雅黑', Arial, Helvetica; margin: auto; width: 256px; color: #333; } .theme { color: #3498db; } .dark-theme { color: #00025d; } form { margin: 100px 0; } .button { margin-top: 10px; background-color: #3498db; border-radius: 5px; color: #fff; padding: 10px 0; text-align: center; cursor: pointer; } .button:hover { background-color: #2c7baf; } .inputs { padding-top: 20px; background-color: rgba(0,0,0,.05); border-radius: 5px; } input[type='text'], input[type='password'] { box-sizing: border-box; padding: 10px 20px; width: 100%%; border: 0; outline: 0; background-color: transparent; } .title { font-weight: bold; font-size: 2rem; margin: 10px 0; }</style></head><body><form><div class='title'><span class='theme'>F</span><span class='dark-theme'>Scut</span><span class='theme'>Net</span></div><div class='inputs'><input type='text' placeholder='请输入账号...' id='userid' value='%s'><input type='password' placeholder='请输入密码...' id='passwd' value='%s' onkeydown='if(event.keyCode==13){login()}'></div><div class='button' onclick='login()'>登 录</div></form><script> function login(){ var userid = document.getElementById('userid').value; var passwd = document.getElementById('passwd').value; window.location = '/login?' + userid + ':' + passwd; }</script></body></html>";
 
 
 int main()
@@ -15,8 +15,9 @@ int main()
 
     /* user_id, passwd, interface_name: global var, defines in "public.h", char [32] */
     get_from_file(PASSWDFILE);
-    // 登录状态清零
-    is_login = 0;
+    
+    // 根据历史配置文件来判断是否自动登录
+    is_login = (strlen(user_id) && strlen(passwd))? 1 : 0;
 
     // init ip mac and socks
     init_dial_env();
@@ -195,7 +196,7 @@ void *http_server(void *args)
         do{
             len = recv(clientfd, recv_buf + nrecv, ETH_DATA_LEN - nrecv, 0);
             if(len <= 0){
-                recv_err = 1; 
+                recv_err = 1;
                 break;
             }
             nrecv += len;
@@ -214,6 +215,8 @@ void *http_server(void *args)
         if(op && strncmp(op, "login", 5) == 0 ){
             // 转换用户名和密码
             parseLoginInfo(op);
+            // 保存配置文件
+            save_to_file(PASSWDFILE);
             is_login = 1;
             send_buf = httpRedirect("/");
         }
@@ -224,7 +227,15 @@ void *http_server(void *args)
         }
         else{
             if(!is_login){
-                send_buf = httpResponse(login_html);
+                char* tempContent = (char*)malloc(2048 + strlen(login_html));
+                if(NULL == tempContent)
+                {
+                    perror("Malloc for tempContent failed");
+                    exit(-1);
+                }
+                sprintf(tempContent, login_html, user_id, passwd);
+                send_buf = httpResponse(tempContent);
+                free(tempContent);
             }
             else{
                 char *cpuEndian;

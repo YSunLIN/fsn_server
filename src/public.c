@@ -146,14 +146,73 @@ void runCommand(char buf[], int len, const char *command)
 
 void get_from_file(char *filename)
 {
+    FILE *fp;
+    static char temp[32]  = {0};
+
+    fp = fopen(filename, "r");
+    if( NULL == fp)
+    {
+        // 清空账号密码
+        user_id[0] = 0;
+        passwd[0] = 0;
+    }
+    else
+    {
+        fgets(user_id, 31, fp);
+        str_strip(user_id);
+        if(strlen(user_id) == 0){
+            printf("Username not exists in %s\n", filename);
+            exit(-1);
+        }
+
+        fgets(passwd, 31, fp);
+        str_strip(passwd);
+        if(strlen(passwd) == 0){
+            printf("Password not exists in %s\n", filename);
+            exit(-1);
+        }
+        fclose(fp);
+    }
+
     runCommand(interface_name, 32, "uci get network.wan.ifname");
     runCommand(listen_ip, 32, "uci get network.lan.ipaddr");
     listen_port = 7288;
-    // 清空账号密码
-    user_id[0] = 0;
-    passwd[0] = 0;
 }
 #endif
+
+
+void save_to_file(char* filename)
+{
+    FILE *fp;
+    static char temp[32]  = {0};
+
+    fp = fopen(filename, "w");
+    if(NULL == fp)
+    {
+        printf("Please check the permission to write %s!\n", filename);
+        return;
+    }
+
+    // 写账号
+    strcpy(temp, user_id);
+    strcat(temp, "\r\n");
+    fwrite (temp, 1, strlen(temp), fp);
+
+    // 写密码
+    strcpy(temp, passwd);
+    strcat(temp, "\r\n");
+    fwrite (temp, 1, strlen(temp), fp);
+
+    // 写接口名
+    strcpy(temp, interface_name);
+    strcat(temp, "\r\n");
+    fwrite (temp, 1, strlen(temp), fp);
+
+    // 写局域网监听地址
+    sprintf(temp, "%s:%d\r\n", listen_ip, listen_port);
+    fwrite (temp, 1, strlen(temp), fp);
+    fclose(fp);
+}
 
 
 // 非线程安全

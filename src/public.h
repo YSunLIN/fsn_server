@@ -29,11 +29,15 @@ char my_mac[ETH_ALEN];
 
 
 void get_from_file(char *);
+void save_to_file(char *);
+
 void print_mac(char *src);
 void print_hex(char *hex, int len);
+
 int checkCPULittleEndian();
+uint32_t big2little_32(uint32_t A);
+
 void get_ctime(char* buf, int len);
 char* mac_ntoa(char src[ETH_ALEN]);
-uint32_t big2little_32(uint32_t A);
 
 #endif

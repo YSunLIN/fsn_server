@@ -18,6 +18,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <time.h>
 
 #define DOFFLINE         0
 #define DONLINE          1

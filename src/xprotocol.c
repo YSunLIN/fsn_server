@@ -236,6 +236,8 @@ size_t mk_pkt(uint8_t * send_buf, int cmd, uint8_t * recv_buf, struct ethhdr * e
             auth_pkt.ext_data.eap_rspn_type = EAP_EXT_MD5_CHALLENGE;
             ret = mk_response_md5(cisco_auth, md);
             if( 16 == ret ){
+                // ready for drcom protocol
+                memcpy(x_resp_md5, md, ret);
                 memcpy(auth_pkt.ext_data.data.md5_data.data, md, ret);
                 memcpy(auth_pkt.ext_data.data.md5_data.data + ret, user_id, strlen(user_id));
                 memcpy(auth_pkt.ext_data.data.md5_data.data + ret + strlen(user_id), EAP_TYPE_MD5_SALT, sizeof(EAP_TYPE_MD5_SALT));
@@ -402,39 +404,62 @@ void parse_pkt(uint8_t * recv_buf, struct ethhdr * local_ethhdr, int rspn_sock)
             switch (rspd_auth->ext_data.code)
             {
             case EAP_CODE_SUCCESS:
-    
                 xstatus = XONLINE;
+                strcpy(nodifyMsg, "none");
                 get_ctime(xUpdateAt, sizeof(xUpdateAt));
                 printf("logon success!\n");
-                return ;
-            
+                break;
+
             case EAP_CODE_FAILURE:
                 xstatus = XOFFLINE;
                 get_ctime(xUpdateAt, sizeof(xUpdateAt));
                 printf("logon failed!\n");
-                return ;
+                break;
 
             case EAP_CODE_REQUEST:
-                // mk_pkt to respond to the service
-                if (rspd_auth->ext_data.eap_rspn_type == EAP_EXT_IDENTIFIER) 
+                // 断网时间不处理8021x协议的Request
+                if(is_forbid_time())
                 {
-                    pkt_size = mk_pkt(rspn_pkt, RESPONSE_ID, recv_buf, local_ethhdr);
-                    shouldResp = 1;
-                    printf("Request stage!\n");
+                    if (rspd_auth->ext_data.eap_rspn_type == EAP_EXT_IDENTIFIER) 
+                    {
+                        printf("Network Blocking Duration: Request IDENTIFIER!\n");
+                    }
+                    else if (rspd_auth->ext_data.eap_rspn_type == EAP_EXT_MD5_CHALLENGE) 
+                    {
+                        printf("Network Blocking Duration: Request MD5_CHALLENGE!\n");
+                    }
+                    else if(rspd_auth->ext_data.eap_rspn_type == EAP_EXT_NOTIFICATION)
+                    {
+                        data_len = htons(rspd_auth->ext_data.len) - 5;
+                        memcpy(nodifyMsg, rspd_auth->ext_data.data.id_data, data_len);
+                        nodifyMsg[data_len] = '\0';
+                        printf("Network Blocking Duration: Notify: %s\n", nodifyMsg);
+                    }
                 }
-                 else if (rspd_auth->ext_data.eap_rspn_type == EAP_EXT_MD5_CHALLENGE) 
-                 {
-                    pkt_size = mk_pkt(rspn_pkt, RESPONSE_MD5, recv_buf, local_ethhdr);
-                    shouldResp = 1;
-                    printf("Passing password stage!\n");
-                }
-                else if(rspd_auth->ext_data.eap_rspn_type == EAP_EXT_NOTIFICATION)
+                // 正常处理
+                else
                 {
-                    data_len = htons(rspd_auth->ext_data.len) - 5;
-                    memcpy(nodifyMsg, rspd_auth->ext_data.data.id_data, data_len);
-                    nodifyMsg[data_len] = '\0';
-                    printf("Notify: %s\n", nodifyMsg);
-                    logoff();
+                    // mk_pkt to respond to the service
+                    if (rspd_auth->ext_data.eap_rspn_type == EAP_EXT_IDENTIFIER) 
+                    {
+                        pkt_size = mk_pkt(rspn_pkt, RESPONSE_ID, recv_buf, local_ethhdr);
+                        shouldResp = 1;
+                        printf("Request stage!\n");
+                    }
+                    else if (rspd_auth->ext_data.eap_rspn_type == EAP_EXT_MD5_CHALLENGE) 
+                    {
+                        pkt_size = mk_pkt(rspn_pkt, RESPONSE_MD5, recv_buf, local_ethhdr);
+                        shouldResp = 1;
+                        printf("Passing password stage!\n");
+                    }
+                    else if(rspd_auth->ext_data.eap_rspn_type == EAP_EXT_NOTIFICATION)
+                    {
+                        data_len = htons(rspd_auth->ext_data.len) - 5;
+                        memcpy(nodifyMsg, rspd_auth->ext_data.data.id_data, data_len);
+                        nodifyMsg[data_len] = '\0';
+                        printf("Notify: %s\n", nodifyMsg);
+                        logoff();
+                    }
                 }
                 break;
                 

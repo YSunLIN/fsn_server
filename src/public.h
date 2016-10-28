@@ -23,6 +23,7 @@ char interface_name[32];
 char listen_ip[32];
 int listen_port;
 int is_login;
+int is_stop_auth;
 
 struct sockaddr_in my_ip;
 char my_mac[ETH_ALEN];
@@ -38,6 +39,7 @@ int checkCPULittleEndian();
 uint32_t big2little_32(uint32_t A);
 
 void get_ctime(char* buf, int len);
+int is_forbid_time();
 char* mac_ntoa(char src[ETH_ALEN]);
 
 #endif

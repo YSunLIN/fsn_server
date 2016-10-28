@@ -18,6 +18,7 @@ int main()
     
     // 根据历史配置文件来判断是否自动登录
     is_login = (strlen(user_id) && strlen(passwd))? 1 : 0;
+    is_stop_auth = 0;
 
     // init ip mac and socks
     init_dial_env();
@@ -224,6 +225,39 @@ void *http_server(void *args)
             is_login = 0;
             logoff();
             send_buf = httpRedirect("/");
+        }
+        else if(op && strncmp(op, "start_auth", 10) == 0 ){
+            is_stop_auth = 0;
+            send_buf = httpRedirect("/option");
+        }
+        else if(op && strncmp(op, "stop_auth", 9) == 0 ){
+            is_stop_auth = 1;
+            send_buf = httpRedirect("/option");
+        }
+        else if(op && strncmp(op, "option", 6) == 0 ){
+            int contentLen = 2048;
+            char* tempContent = (char*)malloc(contentLen);
+            if(NULL == tempContent)
+            {
+                perror("Malloc for tempContent failed");
+                exit(-1);
+            }
+
+            memset(tempContent, 0, contentLen);
+            strcat(tempContent, "<h2>Authentication</h2>");
+            if(is_stop_auth){
+                strcat(tempContent, "status: off<br/>");
+                strcat(tempContent, "operation: <a href='/start_auth'>start</a><br/>");
+            }
+            else{
+                strcat(tempContent, "status: on<br/>");
+                strcat(tempContent, "operation: <a href='/stop_auth'>stop</a><br/>");
+            }
+
+            strcat(tempContent, "<br/><a href='/'>back</a><br/>");
+
+            send_buf = httpResponse(tempContent);
+            free(tempContent);
         }
         else{
             if(!is_login){

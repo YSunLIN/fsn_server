@@ -225,3 +225,26 @@ void get_ctime(char* buf, int len){
     time_struct = localtime ( &time_raw_format );
     strftime (buf, len, "%F %T %Z", time_struct);
 }
+
+
+// 非线程安全
+int is_forbid_time(){
+    // time_t time_raw_format;  
+    // struct tm * time_struct;
+    // int tm_hour, tm_wday;
+
+    // time ( &time_raw_format );  
+    // // localtime : time_t -> tm 此函数返回的时间日期经时区转换 
+    // time_struct = localtime ( &time_raw_format );
+    
+    // tm_hour = time_struct->tm_hour;
+    // tm_wday = time_struct->tm_wday;
+
+    // // 周一到周五的 0点到6点
+    // if(tm_hour >= 0 && tm_hour < 6 &&
+    //     tm_wday >= 1 && tm_wday <= 5){
+    //     return 1;
+    // }
+    // return 0;
+    return is_stop_auth;
+}

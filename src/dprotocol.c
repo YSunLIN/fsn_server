@@ -2,11 +2,11 @@
 #include "xprotocol.h"
 
 
-char drcom_challenge[4];
-char drcom_keepalive_info[4];
-char drcom_keepalive_info2[16];
-char drcom_misc1_flux[4];
-char drcom_misc3_flux[4];
+static char drcom_challenge[4];
+static char drcom_keepalive_info[16];
+static char drcom_keepalive_info2[16];
+static char drcom_misc1_flux[4];
+static char drcom_misc3_flux[4];
 
 
 static int  sock;
@@ -57,8 +57,9 @@ int start_request()
 
 int send_login_auth()
 {
-    const int pkt_data_len = 244;
+    const int pkt_data_len = 500; // 学号为账号，该包长度是244
     char pkt_data[pkt_data_len];
+    int real_pkt_len = 0;
 
     memset(pkt_data, 0, pkt_data_len);
     int data_index = 0;
@@ -101,26 +102,36 @@ int send_login_auth()
     pkt_data[data_index++] = 0x00;
     pkt_data[data_index++] = 0x00;
 
-    // 0x0020  帐号 + 计算机名
+    // 0x0020  帐号
     int user_id_length = strlen(user_id);
     memcpy(pkt_data + data_index, user_id, user_id_length); 
     data_index += user_id_length;
+    
+    // 计算机名，贴在账号后面，长度32
     char temp[100];
-    memset(temp, 0, 100);
+    memset(temp, 0, 32);
     strcpy(temp, "PC-");
     strcat(temp, user_id);
-    memcpy(pkt_data + data_index, temp, 32 - user_id_length);
-    data_index += (32 - user_id_length);
+    temp[31] = 0;
+    memcpy(pkt_data + data_index, temp, 32);
+    data_index += 32;
+   
+    //0x0040  dns 1 (222.201.130.30)
+    pkt_data[data_index++] = 0xde;
+    pkt_data[data_index++] = 0xc9;
+    pkt_data[data_index++] = 0x82;
+    pkt_data[data_index++] = 0x1e;
+    data_index += 4;
 
-    //0x0040  dns 1 (114.114.114.114)
-    data_index += 12;
-    pkt_data[data_index++] = 0x72;
-    pkt_data[data_index++] = 0x72;
-    pkt_data[data_index++] = 0x72;
-    pkt_data[data_index++] = 0x72;
+    //0x0040  dns 2 (222.201.130.33)
+    pkt_data[data_index++] = 0xde;
+    pkt_data[data_index++] = 0xc9;
+    pkt_data[data_index++] = 0x82;
+    pkt_data[data_index++] = 0x21;
+    data_index += 4;
 
-    //0x0050
-    data_index += 16;
+    //0x0050 unknown
+    data_index += 4;
 
     //0x0060
     pkt_data[data_index++] = 0x94;
@@ -153,24 +164,40 @@ int send_login_auth()
 
     //0x00b0
     data_index += 4;
+
+    //hash为64位
     char hashcode[] = "2ec15ad258aee9604b18f2f8114da38db16efd00";
     memcpy(pkt_data + data_index, hashcode, 40);
-    data_index += 24;
+    data_index += 64;
 
-    char revData[RECV_BUF_LEN];
-    memset(revData, 0, RECV_BUF_LEN);
+    // 长度得整除4，由于CRC32
+    real_pkt_len = data_index;
+    if(data_index % 4){
+        real_pkt_len = data_index + 4 - data_index % 4;
+    }
+    // 回填包的长度
+    pkt_data[2] = 0xff & real_pkt_len;
+    pkt_data[3] = 0xff & (real_pkt_len >> 8);
 
-    unsigned int crc = drcom_crc32(pkt_data, pkt_data_len);
+    // 计算crc32
+    unsigned int crc = drcom_crc32(pkt_data, real_pkt_len);
     // print_hex((char *) &crc, 4);
-
     memcpy(pkt_data + 24, (char *) &crc, 4);
+
+    // drcom_keepalive_info是xprotocol的md5 和 crc32 交叉
+    memcpy(drcom_keepalive_info, x_resp_md5, 16);
     memcpy(drcom_keepalive_info, (char *) &crc, 4);
+
     // 完成crc32校验，置位0
     pkt_data[28] = 0x00;
 
-    // print_hex(pkt_data,pkt_data_len);
+    // print_hex(pkt_data,real_pkt_len);
+
+    // 收包
+    char revData[RECV_BUF_LEN];
+    memset(revData, 0, RECV_BUF_LEN);
     int revLen =
-        udp_send_and_rev(pkt_data, pkt_data_len, revData);
+        udp_send_and_rev(pkt_data, real_pkt_len, revData);
     // print_hex(revData, revLen);
     if(revLen < 0) return -1;
 
@@ -287,11 +314,20 @@ int send_alive_begin()      //keepalive
 
     pkt_data[data_index++] = 0xff;  // Code
 
+    // drcom_keepalive_info(crc32 + md5)
     memcpy(pkt_data + data_index, drcom_keepalive_info, 16);
     data_index += 19;
 
+    // drcom_keepalive_info2
     memcpy(pkt_data + data_index, drcom_keepalive_info2, 16);
     data_index += 16;
+
+    // timestamp
+    time_t timeinfo = time(NULL);
+    pkt_data[data_index++] = 0xff & timeinfo;
+    pkt_data[data_index++] = 0xff & (timeinfo >> 8);
+
+    // print_hex(pkt_data, pkt_data_len);
 
     char revData[RECV_BUF_LEN];
     memset(revData, 0, RECV_BUF_LEN);
@@ -300,7 +336,6 @@ int send_alive_begin()      //keepalive
     if(revLen < 0) return -1;
 
     return 0;
-
 }
 
 
@@ -441,6 +476,17 @@ void* serve_forever_d(void *args)
 
         // 检测掉线
         if(xstatus == XOFFLINE || dstatus == DOFFLINE){
+            // 断网时间不重连8021x协议
+            if(is_forbid_time()){
+                dstatus = DOFFLINE;
+                printAll("Authentication is stopped");
+                sleep(10);
+                // 更新时间
+                get_ctime(dUpdateAt, sizeof(dUpdateAt));
+                // 前面已经sleep过了
+                continue;
+            }
+
             if(xstatus == XOFFLINE){
                 // 失败两次以上，就用广播
                 login_fail_count++;

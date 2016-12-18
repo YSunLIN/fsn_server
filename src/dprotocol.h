@@ -38,6 +38,7 @@ char dUpdateAt[64];
 
 
 void init_env_d();
+int udp_recv(char* recv_buf);
 int udp_send_and_rev(char* send_buf, int send_len, char* recv_buf);
 void* serve_forever_d(void *args);
 

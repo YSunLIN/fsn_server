@@ -41,7 +41,7 @@ int start_request()
     char revData[RECV_BUF_LEN];
     memset(revData, 0, RECV_BUF_LEN);
     int revLen =
-        udp_send_and_rev(pkt_data, pkt_data_len, revData);
+        udp_send_and_recv(pkt_data, pkt_data_len, revData);
     // print_hex(revData, revLen);
     if(revLen < 0) return -1;
 
@@ -197,7 +197,7 @@ int send_login_auth()
     char revData[RECV_BUF_LEN];
     memset(revData, 0, RECV_BUF_LEN);
     int revLen =
-        udp_send_and_rev(pkt_data, real_pkt_len, revData);
+        udp_send_and_recv(pkt_data, real_pkt_len, revData);
     // print_hex(revData, revLen);
     if(revLen < 0) return -1;
 
@@ -238,7 +238,7 @@ int send_alive_pkt1()
     char revData[RECV_BUF_LEN];
     memset(revData, 0, RECV_BUF_LEN);
     int revLen =
-        udp_send_and_rev(pkt_data, pkt_data_len, revData);
+        udp_send_and_recv(pkt_data, pkt_data_len, revData);
     // print_hex(revData, revLen);
     if(revLen < 0) return -1;
 
@@ -255,7 +255,7 @@ int send_alive_pkt1()
         printf("Drcom Server Message: %s\n", revData + 4);
         revData[sizeof(dsystemMsg)] = 0; 
         strcpy(dsystemMsg, revData + 4);
-        revLen = udp_send_and_rev(NULL, 0, revData);
+        revLen = udp_recv(revData);
         if(revLen < 0) return -1;
     }
 
@@ -293,7 +293,7 @@ int send_alive_pkt2()
     char revData[RECV_BUF_LEN];
     memset(revData, 0, RECV_BUF_LEN);
     int revLen =
-        udp_send_and_rev(pkt_data, pkt_data_len, revData);
+        udp_send_and_recv(pkt_data, pkt_data_len, revData);
     // print_hex(revData, revLen);
     if(revLen < 0) return -1;
 
@@ -332,7 +332,7 @@ int send_alive_begin()      //keepalive
     char revData[RECV_BUF_LEN];
     memset(revData, 0, RECV_BUF_LEN);
     int revLen =
-        udp_send_and_rev(pkt_data, pkt_data_len, revData);
+        udp_send_and_recv(pkt_data, pkt_data_len, revData);
     if(revLen < 0) return -1;
 
     return 0;
@@ -374,14 +374,19 @@ void init_env_d()
 }
 
 
-int udp_send_and_rev(char* send_buf, int send_len, char* recv_buf)
+int udp_send_and_recv(char* send_buf, int send_len, char* recv_buf)
 {
     int nrecv_send, addrlen = sizeof(struct sockaddr_in);
     struct sockaddr_in clntaddr;
     int try_times = RETRY_TIME;
 
     // 有内容才发
-    while(send_len && try_times--){
+    if(send_len <= 0 || send_buf == NULL){
+        printf("udp send and recv failed: send_buf is null\n");
+        return 0;
+    }
+
+    while(try_times--){
         nrecv_send = sendto(sock, send_buf, send_len, 0, (struct sockaddr *) &drcomaddr, addrlen);
         if(nrecv_send != send_len) continue;
 
@@ -396,6 +401,24 @@ int udp_send_and_rev(char* send_buf, int send_len, char* recv_buf)
         printf("udp send and recv failed\n");
     }
     return nrecv_send;
+}
+
+
+int udp_recv(char* recv_buf)
+{
+    int nrecv, addrlen = sizeof(struct sockaddr_in);
+    struct sockaddr_in clntaddr;
+
+    nrecv = recvfrom(sock, recv_buf, RECV_BUF_LEN, 0,
+            (struct sockaddr*) &clntaddr, &addrlen);
+    
+    if(nrecv > 0 && memcmp(&clntaddr.sin_addr, &drcomaddr.sin_addr, 4) == 0){
+        printf("udp recv successfully\n");
+    }
+    else{
+        printf("udp recv failed\n");
+    }
+    return nrecv;
 }
 
 

@@ -310,7 +310,8 @@ void logon()
     else
         pkt_size = mk_pkt(logon_pkt, START, NULL, &broadcast_eth_header);
 
-
+    // 重新发包，把返回失败包置0
+    x_is_resp_fail = 0;
     send_pkt(sock, logon_pkt, pkt_size);
     free(logon_pkt);
     log_flag = ON;
@@ -405,6 +406,7 @@ void parse_pkt(uint8_t * recv_buf, struct ethhdr * local_ethhdr, int rspn_sock)
             {
             case EAP_CODE_SUCCESS:
                 xstatus = XONLINE;
+                x_is_resp_fail = 0;
                 strcpy(nodifyMsg, "none");
                 get_ctime(xUpdateAt, sizeof(xUpdateAt));
                 printf("logon success!\n");
@@ -412,6 +414,7 @@ void parse_pkt(uint8_t * recv_buf, struct ethhdr * local_ethhdr, int rspn_sock)
 
             case EAP_CODE_FAILURE:
                 xstatus = XOFFLINE;
+                x_is_resp_fail = 1;
                 get_ctime(xUpdateAt, sizeof(xUpdateAt));
                 printf("logon failed!\n");
                 break;
@@ -525,6 +528,7 @@ void recv_eap_pkt(const int sock_arg, struct sockaddr_ll * sa_ll_arg, struct eth
 void* serve_forever_x(void *args){
     log_flag = OFF;  
     xstatus = XOFFLINE;
+    x_is_resp_fail = 0;
     x_is_broadcast = 0;
     strcpy(nodifyMsg, "none");
     // 初始化时间

@@ -73,10 +73,9 @@ void str_strip(char *str){
     *ptmp = '\0';
 }
 
-#ifdef  _X86_
+#if defined(_X86_) || defined(RPI)
 void get_from_file(char *filename)
 {
-    
     FILE *fp;
     static char temp[32]  = {0};
 

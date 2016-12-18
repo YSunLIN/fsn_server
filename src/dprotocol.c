@@ -115,7 +115,7 @@ int send_login_auth()
     temp[31] = 0;
     memcpy(pkt_data + data_index, temp, 32);
     data_index += 32;
-   
+
     //0x0040  dns 1 (222.201.130.30)
     pkt_data[data_index++] = 0xde;
     pkt_data[data_index++] = 0xc9;
@@ -383,16 +383,18 @@ int udp_send_and_rev(char* send_buf, int send_len, char* recv_buf)
     // 有内容才发
     while(send_len && try_times--){
         nrecv_send = sendto(sock, send_buf, send_len, 0, (struct sockaddr *) &drcomaddr, addrlen);
-        if(nrecv_send == send_len) break;
-    }
+        if(nrecv_send != send_len) continue;
 
-    try_times = RETRY_TIME;
-    while(try_times--){
         nrecv_send = recvfrom(sock, recv_buf, RECV_BUF_LEN, 0,
                 (struct sockaddr*) &clntaddr, &addrlen);
         if(nrecv_send > 0 && memcmp(&clntaddr.sin_addr, &drcomaddr.sin_addr, 4) == 0) break;
     }
-
+    if(try_times > 0){
+        printf("udp send and recv successfully and try_times: %d\n", RETRY_TIME - try_times);
+    }
+    else{
+        printf("udp send and recv failed\n");
+    }
     return nrecv_send;
 }
 
@@ -507,8 +509,9 @@ void* serve_forever_d(void *args)
             old_xstatus = xstatus = XOFFLINE;
             dstatus = DOFFLINE;
             xloginWait = 0;
+            
             // 尝试等久点，由于何健明的bug
-            while(xstatus != XONLINE && xloginWait < 10){
+            while(x_is_resp_fail == 0 && xstatus != XONLINE && xloginWait < 10){
                 sleep(1);
                 xloginWait += 1;
             }

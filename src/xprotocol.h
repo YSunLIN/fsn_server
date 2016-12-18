@@ -112,6 +112,7 @@ struct sockaddr_ll sa_ll;
 struct ethhdr  eth_header;
 struct ethhdr  broadcast_eth_header;
 int xstatus;
+int x_is_resp_fail;
 int x_is_broadcast;
 char x_resp_md5[16];
 char nodifyMsg[256];

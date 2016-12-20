@@ -73,7 +73,7 @@ void str_strip(char *str){
     *ptmp = '\0';
 }
 
-#if defined(_X86_) || defined(RPI)
+#ifdef NO_UCI
 void get_from_file(char *filename)
 {
     FILE *fp;

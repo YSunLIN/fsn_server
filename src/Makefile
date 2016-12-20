@@ -1,3 +1,17 @@
+# UCI option setting
+UCI := y
+# Linux distro detecting
+DISTRO := $(shell cat /etc/*-release | grep -Po "(?<=^ID=).*")
+ifeq (($DISTRO),raspbian)
+        UCI=N
+endif
+ifeq (($DISTRO),ubuntu)
+        UCI=N
+endif
+ifneq ($UCI,y)
+         CFLAGS += -D NO_UCI
+endif
+
 fsn_server: dial.o xprotocol.o dprotocol.o md5.o public.o
 	$(CC) $^ -g -o $@ -lpthread
 
